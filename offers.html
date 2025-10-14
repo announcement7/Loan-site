@@ -1825,7 +1825,7 @@
                     <!-- Phone Number Input -->
                     <div class="mb-6">
                         <label for="phoneInput" class="block text-sm font-medium text-gray-700 mb-2">
-    Your active M-Pesa phone number (used for tracking, contacting you, STK push, and confirmation) e.g. 0722000000 <span class="text-red-500">*</span>
+    Your active M-Pesa phone number (used for tracking, contacting you, STK push, and confirmation) e.g. 0722000000 or 0122000000 <span class="text-red-500">*</span>
 </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -2662,8 +2662,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 updatePhoneValidation(this, true);
             } else if (phone.length < 9) {
                 updatePhoneValidation(this, false, 'Phone number must be 9 digits');
-            } else if (!/^[7]\d{8}$/.test(phone)) {
-                updatePhoneValidation(this, false, 'Invalid Kenyan phone number format');
+            } else if (!/^(7|1)\d{8}$/.test(phone)) {
+                updatePhoneValidation(this, false, 'Invalid Kenyan phone number format ');
             } else {
                 updatePhoneValidation(this, true);
             }
