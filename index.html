@@ -292,19 +292,62 @@
         <div id="sessionTime"></div>
     </div>
 
-    <!-- Loading Overlay -->
-     <div id="loadingOverlay" class="loading-overlay">
-    <div class="text-center">
-        <p class="text-xl swift-primary font-semibold">Processing your application Form please wait...</p>
-        
-        <div class="loading-spinner animate-spin my-4 mx-auto">
-            <svg class="text-white" width="30" height="30" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-            </svg>
-        </div>
+ <!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="text-center">
+    <p class="text-xl swift-primary font-semibold">
+      Processing your application form, please wait...
+    </p>
 
-        <p class="text-gray-600">Please wait while we redirect you</p>
+    <div class="loading-spinner my-4 mx-auto">
+      <svg width="80" height="80" viewBox="0 0 100 100">
+        <!-- Circular ring -->
+        <circle
+          cx="50"
+          cy="50"
+          r="45"
+          stroke="#00C6FF"
+          stroke-width="6"
+          fill="none"
+          stroke-linecap="round"
+          stroke-dasharray="280"
+          stroke-dashoffset="200"
+        >
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0 50 50"
+            to="360 50 50"
+            dur="1.2s"
+            repeatCount="indefinite"
+          />
+        </circle>
+
+        <!-- Checkmark -->
+        <path
+          d="M30 52 L45 67 L70 40"
+          stroke="#00FF99"
+          stroke-width="6"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-dasharray="60"
+          stroke-dashoffset="60"
+        >
+          <animate
+            attributeName="stroke-dashoffset"
+            from="60"
+            to="0"
+            dur="1.5s"
+            begin="0.5s"
+            repeatCount="indefinite"
+          />
+        </path>
+      </svg>
     </div>
+
+    <p class="text-gray-600">Please wait while we verify your eligibility...</p>
+  </div>
 </div>
  
 
@@ -346,24 +389,24 @@
        class="hidden absolute top-full mt-3 w-72 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 text-white text-sm rounded-lg shadow-lg p-4 
               left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0">
 
-    <!-- 🔽 Pointer -->
-    <div class="absolute -top-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0">
-      <div class="w-0 h-0 border-l-8 border-r-8 border-b-8 border-transparent border-b-orange-500"></div>
-    </div>
+<!-- 🔽 Pointer -->
+<div class="absolute -top-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0">
+  <div class="w-0 h-0 border-l-8 border-r-8 border-b-8 border-transparent border-b-orange-500"></div>
+</div>
 
-    <div class="flex justify-between items-start">
-      <p>
-        ⚡ <span class="font-bold">Special Offer:</span> Borrow up to 
-        <span class="font-bold">200,000 KES</span> with <span class="font-bold">instant approval</span>.  
-        Apply now and receive funds in minutes!
-      </p>
-      <!-- ✖ Close Button -->
-      <button onclick="closeNotification()" class="ml-2 text-white hover:text-gray-200">
-        ✖
-      </button>
-    </div>
-    <a href="eligibility.html" class="block mt-2 underline font-semibold hover:text-yellow-200">Apply Now →</a>
-  </div>
+<div class="flex justify-between items-start">
+  <p>
+    🎁 <span class="font-bold">Refer Friends & Earn Rewards:</span> Invite your friends to join and get amazing bonuses for each successful referral!  
+    <br>
+    🔧 <span class="font-bold">Planned Maintenance:</span> Scheduled for <span class="font-bold">Wednesday, 15 October 2025 at 12:00 PM</span>.
+  </p>
+  <!-- ✖ Close Button -->
+  <button onclick="closeNotification()" class="ml-2 text-white hover:text-gray-200">
+    ✖
+  </button>
+</div>
+<a href="referral.html" class="block mt-2 underline font-semibold hover:text-yellow-200">Refer Now →</a>
+</div>
 </div>
 
 <script>
@@ -1444,53 +1487,7 @@
             alert('App download will be available soon! You can apply for loans directly on our website.');
         }
     </script>
- 
-  <!-- Firebase App (core SDK) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<!-- Firebase Authentication -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<!-- (Optional) Analytics -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
-<script>
-  // ✅ Your Firebase config
-  
-const firebaseConfig = {
-  apiKey: "AIzaSyBtx-D3nbl1lKOhCzEixDZRgRDM4NbtOBE",
-  authDomain: "swiftauth-5fcb5.firebaseapp.com",
-  projectId: "swiftauth-5fcb5",
-  storageBucket: "swiftauth-5fcb5.firebasestorage.app",
-  messagingSenderId: "990160652137",
-  appId: "1:990160652137:web:abac238567edfdb5671ff8",
-  measurementId: "G-5C1DS28B5S"
-};
-
-
-
-  // ✅ Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  firebase.analytics();
-
-  // ✅ Authentication check
-  firebase.auth().onAuthStateChanged(user => {
-    const loginKey = "imarika_last_login";
-    const lastLogin = localStorage.getItem(loginKey);
-    const now = Date.now();
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-
-    const expired = !lastLogin || now - parseInt(lastLogin) > maxAge;
-
-    if (!user || expired) {
-      localStorage.removeItem(loginKey);
-      firebase.auth().signOut().finally(() => {
-        window.location.href = "login.html";
-      });
-    } else {
-      localStorage.setItem(loginKey, now.toString());
-      updateAuthUI?.(user); // Optional hook
-    }
-  });
-</script>
 
     </script>
 </body>
