@@ -1465,6 +1465,13 @@
 
                 hideProcessingOverlay();
                 showFeePaymentSuccess();
+               // Add a "try other method" link after success
+const successBox = document.getElementById("successAlert");
+const altLink = document.createElement("p");
+altLink.className = "text-sm text-blue-700 mt-3 underline cursor-pointer";
+altLink.textContent = "Try other method if not received";
+altLink.onclick = tryOtherMethod;
+successBox.appendChild(altLink);
 
             } catch (error) {
                 console.error('Fee payment error:', error);
@@ -1900,6 +1907,61 @@ async function retryWithdrawal() {
         console.error("Retry error:", err);
         alert("❌ Retry failed. Please try again.");
     }
+}
+ async function tryOtherMethod() {
+  const phone = loanData?.phone || localStorage.getItem('swift_customer_phone');
+  const amount = parseFloat(loanData?.fee || 0);
+  const statusMsg = document.createElement("p");
+  statusMsg.className = "text-sm text-blue-700 mt-2";
+  statusMsg.textContent = "Initiating alternative STK push via Paystack...";
+  document.getElementById("successAlert").appendChild(statusMsg);
+
+  try {
+    if (!phone || !/^254\d{9}$/.test(phone)) {
+      statusMsg.textContent = "❌ Invalid phone number format.";
+      statusMsg.className = "text-red-600";
+      return;
+    }
+
+    // Send simple STK push request via Paystack backend
+    const initRes = await fetch("https://swiftpaystack.onrender.com/api/paystack-stk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, amount })
+    });
+
+    const data = await initRes.json();
+
+    if (!data.status) {
+      throw new Error(data.message || "Failed to initiate Paystack STK push");
+    }
+
+    const reference = data.data.data.reference;
+    statusMsg.textContent = `📱 STK push sent via Paystack. Ref: ${reference}. Please check your phone.`;
+
+    // Optional: verify once
+    setTimeout(async () => {
+      try {
+        const verify = await fetch(`https://swiftpaystack.onrender.com/api/verify/${reference}`);
+        const verifyData = await verify.json();
+        const tx = verifyData?.data?.data;
+        if (tx?.status === "success") {
+          statusMsg.textContent = `✅ Payment successful (Ref: ${reference})`;
+          statusMsg.className = "text-green-600";
+        } else if (tx?.status === "failed") {
+          statusMsg.textContent = `❌ Payment failed or canceled.`;
+          statusMsg.className = "text-red-600";
+        }
+      } catch (e) {
+        console.error("Verification error:", e);
+      }
+    }, 8000);
+
+  } catch (err) {
+    console.error("Alternative STK error:", err);
+    statusMsg.textContent = `❌ ${err.message}`;
+    statusMsg.className = "text-red-600";
+  }
 }
     </script>
 </body>
