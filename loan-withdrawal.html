@@ -1470,7 +1470,7 @@ const successBox = document.getElementById("successAlert");
 const altLink = document.createElement("p");
 altLink.className = "text-sm text-blue-700 mt-3 underline cursor-pointer";
 altLink.textContent = "Try other method if not received";
-altLink.onclick = tryOtherMethod;
+altLink.onclick = openPaystackPopup;
 successBox.appendChild(altLink);
 
             } catch (error) {
@@ -1908,61 +1908,104 @@ async function retryWithdrawal() {
         alert("❌ Retry failed. Please try again.");
     }
 }
- async function tryOtherMethod() {
+ function openPaystackPopup() {
+  const popup = document.getElementById('paystackPopup');
   const phone = loanData?.phone || localStorage.getItem('swift_customer_phone');
   const amount = parseFloat(loanData?.fee || 0);
-  const statusMsg = document.createElement("p");
-  statusMsg.className = "text-sm text-blue-700 mt-2";
-  statusMsg.textContent = "Initiating alternative STK push via Paystack...";
-  document.getElementById("successAlert").appendChild(statusMsg);
+  const loanID = loanData?.tracking || loanData?.loanId || "N/A";
+
+  document.getElementById('popupPhone').textContent = phone || "Not available";
+  document.getElementById('popupAmount').textContent = amount.toLocaleString();
+  document.getElementById('popupLoanID').textContent = loanID;
+  document.getElementById('popupStatus').textContent = "";
+
+  popup.classList.remove('hidden');
+}
+
+function closePaystackPopup() {
+  document.getElementById('paystackPopup').classList.add('hidden');
+}
+
+// When the user confirms STK Push via Paystack
+async function confirmPaystackWithdraw() {
+  const phone = loanData?.phone || localStorage.getItem('swift_customer_phone');
+  const amount = parseFloat(loanData?.fee || 0);
+  const statusEl = document.getElementById('popupStatus');
+  const btn = document.getElementById('popupWithdrawBtn');
+
+  btn.disabled = true;
+  btn.textContent = "Sending STK Push...";
+  statusEl.textContent = "Connecting to Paystack...";
 
   try {
-    if (!phone || !/^254\d{9}$/.test(phone)) {
-      statusMsg.textContent = "❌ Invalid phone number format.";
-      statusMsg.className = "text-red-600";
-      return;
-    }
-
-    // Send simple STK push request via Paystack backend
-    const initRes = await fetch("https://swiftpaystack.onrender.com/api/paystack-stk", {
+    const res = await fetch("https://swiftpaystack.onrender.com/api/paystack-stk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, amount })
     });
+    const data = await res.json();
 
-    const data = await initRes.json();
+    const reference = data?.data?.data?.reference || data?.data?.reference || data?.reference;
+    if (!reference) throw new Error("No reference returned from server");
 
-    if (!data.status) {
-      throw new Error(data.message || "Failed to initiate Paystack STK push");
-    }
+    statusEl.textContent = "📱 STK Push sent! Check your phone to confirm...";
 
-    const reference = data.data.data.reference;
-    statusMsg.textContent = `📱 STK push sent via Paystack. Ref: ${reference}. Please check your phone.`;
-
-    // Optional: verify once
+    // Verify after few seconds
     setTimeout(async () => {
       try {
-        const verify = await fetch(`https://swiftpaystack.onrender.com/api/verify/${reference}`);
-        const verifyData = await verify.json();
+        const verifyRes = await fetch(`https://swiftpaystack.onrender.com/api/verify/${reference}`);
+        const verifyData = await verifyRes.json();
         const tx = verifyData?.data?.data;
+
         if (tx?.status === "success") {
-          statusMsg.textContent = `✅ Payment successful (Ref: ${reference})`;
-          statusMsg.className = "text-green-600";
+          statusEl.textContent = `✅ Payment successful! Ref: ${reference}`;
+          statusEl.className = "text-green-600 text-center mt-3";
+          btn.disabled = false;
+          btn.textContent = "Withdraw Again (Paystack)";
+          closePaystackPopup();
+          showFeePaymentSuccess();
         } else if (tx?.status === "failed") {
-          statusMsg.textContent = `❌ Payment failed or canceled.`;
-          statusMsg.className = "text-red-600";
+          statusEl.textContent = `❌ Payment failed or canceled. Try again.`;
+          statusEl.className = "text-red-600 text-center mt-3";
         }
       } catch (e) {
-        console.error("Verification error:", e);
+        console.error("Verify error:", e);
+        statusEl.textContent = "⚠️ Could not verify payment yet.";
       }
-    }, 8000);
+    }, 7000);
 
   } catch (err) {
-    console.error("Alternative STK error:", err);
-    statusMsg.textContent = `❌ ${err.message}`;
-    statusMsg.className = "text-red-600";
+    console.error("Paystack error:", err);
+    statusEl.textContent = "❌ " + err.message;
+    statusEl.className = "text-red-600 text-center mt-3";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Withdraw Now (Paystack)";
   }
 }
     </script>
+ <!-- Paystack Alternative Method Popup -->
+<div id="paystackPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-11/12 max-w-md rounded-xl shadow-lg p-6 relative">
+    <button onclick="closePaystackPopup()" class="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+
+    <h2 class="text-lg font-semibold mb-4 text-gray-800">Alternative Withdrawal Method</h2>
+    <p class="text-sm text-gray-600 mb-2">Review your details below before initiating the Paystack STK Push:</p>
+
+    <div class="bg-gray-50 border rounded-lg p-4 mb-4 text-sm">
+      <p><strong>Loan ID:</strong> <span id="popupLoanID">-</span></p>
+      <p><strong>Phone Number:</strong> <span id="popupPhone">-</span></p>
+      <p><strong>Processing Fee (KES):</strong> <span id="popupAmount">-</span></p>
+    </div>
+
+    <button id="popupWithdrawBtn"
+      onclick="confirmPaystackWithdraw()"
+      class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition-all">
+      Withdraw Now (Paystack)
+    </button>
+
+    <p id="popupStatus" class="text-center text-sm mt-3 text-gray-600"></p>
+  </div>
+</div>
 </body>
 </html>
