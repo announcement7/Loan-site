@@ -333,45 +333,7 @@
   #receiptCardContainer button {
     display: none !important;
   }
- /* === Modal Animation === */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  z-index: 9999;
-  transition: opacity 0.3s ease;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 1.25rem 1.25rem 0 0;
-  width: 100%;
-  max-width: 420px;
-  padding: 1.5rem;
-  transform: translateY(100%);
-  transition: transform 0.35s ease-in-out;
-}
-
-.modal-overlay.active {
-  opacity: 1;
-}
-
-.modal-overlay.active .modal-content {
-  transform: translateY(0);
-}
-
-.modal-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: transparent;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
+ 
 </style>
  <!-- Brevo Conversations {literal} -->
 <script>
