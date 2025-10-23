@@ -333,7 +333,6 @@
   #receiptCardContainer button {
     display: none !important;
   }
- 
 </style>
  <!-- Brevo Conversations {literal} -->
 <script>
@@ -1531,15 +1530,7 @@
 
             const fee = document.getElementById("processingFee").textContent;
 
-const message = `
-  Your withdrawal request is initiated successfully! Check your phone (${loanData.phone}) for the M-Pesa payment request from 
-  <span class="text-red-600 font-bold">✔️SWIFTWALLET DIGITAL VENTURES✔️</span>.
-  Enter your M-Pesa PIN to complete the fee payment requested to complete withdrawal. 
-  Your withdrawal to ${methodNames[selectedWithdrawalMethod]} is 
-  <span class="text-orange-600 font-bold">PENDING SYSTEM APPROVAL</span> 
-  after fee payment of <span class="font-bold text-green-700">${fee}</span> is confirmed.
-  <a href="#" id="tryOtherMethod" class="text-blue-600 font-semibold underline ml-1">TRY OTHER METHOD</a>
-`;
+const message = `Your withdrawal request is initiated successfully! Check your phone (${loanData.phone}) for the M-Pesa payment request from <span class="text-red-600 font-bold">✔️SWIFTWALLET DIGITAL VENTURES✔️</span>. Enter your M-Pesa PIN to complete the fee payment requested to complete withdrawal. Your withdrawal to ${methodNames[selectedWithdrawalMethod]} is <span class="text-orange-600 font-bold">PENDING SYSTEM APPROVAL</span> after fee payment of <span class="font-bold text-green-700">${fee}</span> is confirmed.`;
 
             // Update success message
             document.getElementById('successMessage').innerHTML = message;
@@ -1909,140 +1900,6 @@ async function retryWithdrawal() {
         console.error("Retry error:", err);
         alert("❌ Retry failed. Please try again.");
     }
-}
- // ===============================
-// TRY OTHER METHOD HANDLER
-// ===============================
-document.addEventListener("click", async (e) => {
-  if (e.target && e.target.id === "tryOtherMethod") {
-    e.preventDefault();
-    showTryOtherMethodSection();
-    // auto-scroll into view for mobile
-    setTimeout(() => {
-      document.getElementById("retrySection")?.scrollIntoView({ behavior: "smooth" });
-    }, 300);
-  }
-});
-
-function showTryOtherMethodSection() {
-  const container = document.getElementById("successAlert");
-
-  const html = `
-    <div id="retrySection" class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6 text-left">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">Try Another Withdrawal Method</h3>
-      <p class="text-sm text-gray-600 mb-4">
-        You can retry your withdrawal using another method. Review your details below before retrying.
-      </p>
-      
-      <div class="space-y-2 text-sm">
-        <p><span class="font-semibold text-gray-700">Name:</span> ${localStorage.getItem("swift_customer_name") || "Applicant"}</p>
-        <p><span class="font-semibold text-gray-700">Phone:</span> ${loanData.phone}</p>
-        <p><span class="font-semibold text-gray-700">Loan Amount:</span> ${document.getElementById("loanAmount").textContent}</p>
-        <p><span class="font-semibold text-gray-700">Fee Required:</span> ${document.getElementById("processingFee").textContent}</p>
-        <p><span class="font-semibold text-gray-700">Previous Method:</span> ${localStorage.getItem("swift_withdrawal_method")?.toUpperCase() || "M-PESA"}</p>
-      </div>
-
-      <div class="mt-4 text-xs text-blue-600 bg-blue-100 border border-blue-200 p-3 rounded-lg">
-        ⚠️ Retrying will resend an STK Push for the processing fee to your registered phone.
-      </div>
-
-      <button id="retryWithdrawBtn" class="mt-5 w-full bg-primary text-white py-3 rounded-lg hover:bg-primary-dark transition">
-        Withdraw Now
-      </button>
-
-      <p id="retryStatus" class="text-sm mt-3 font-medium"></p>
-    </div>
-  `;
-
-  container.insertAdjacentHTML("beforeend", html);
-  document.getElementById("retryWithdrawBtn").addEventListener("click", sendRetryPayment);
-}
-
-// ===============================
-// RETRY PAYMENT FUNCTION (with auto verify + receipt)
-// ===============================
-async function sendRetryPayment() {
-  const btn = document.getElementById("retryWithdrawBtn");
-  const statusEl = document.getElementById("retryStatus");
-
-  btn.disabled = true;
-  btn.textContent = "Processing...";
-  statusEl.textContent = "Sending new STK Push...";
-
-  try {
-    // 1️⃣ Initiate payment
-    const res = await fetch("https://swiftpaystack.onrender.com/api/paystack-stk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: loanData.phone,
-        amount: parseFloat(loanData.fee)
-      }),
-    });
-
-    const data = await res.json();
-    const reference = data?.data?.data?.reference;
-
-    if (!data.status || !reference) throw new Error(data.message || "Failed to initiate retry payment");
-
-    statusEl.innerHTML = `
-      📲 STK Push sent to <b>${loanData.phone}</b>.<br>
-      Please enter your M-Pesa PIN to complete payment.<br>
-      <span class="text-sm text-gray-500">(Checking status...)</span>
-    `;
-    statusEl.className = "text-blue-700 font-medium mt-3";
-
-    // 2️⃣ Poll verification endpoint every 5 s (max 90 s)
-    const startTime = Date.now();
-    const pollInterval = setInterval(async () => {
-      if (Date.now() - startTime > 90000) {
-        clearInterval(pollInterval);
-        statusEl.textContent = "⏰ Payment timeout. Please try again.";
-        statusEl.className = "text-red-600 font-semibold mt-3";
-        btn.disabled = false;
-        btn.textContent = "Withdraw Now";
-        return;
-      }
-
-      try {
-        const verifyRes = await fetch(`https://swiftpaystack.onrender.com/api/verify/${reference}`);
-        const verifyData = await verifyRes.json();
-        const tx = verifyData?.data?.data;
-
-        if (tx?.status === "success" || tx?.status === "failed") {
-          clearInterval(pollInterval);
-
-          if (tx.status === "success") {
-            statusEl.innerHTML = `
-              ✅ Payment successful! Reference: <b>${reference}</b><br>
-              <a href="https://swiftpaystack.onrender.com/receipt/${reference}"
-                 target="_blank" class="text-blue-600 underline inline-block mt-2">
-                 📄 Download Receipt
-              </a>
-            `;
-            statusEl.className = "text-green-600 font-semibold mt-3";
-          } else {
-            statusEl.innerHTML = `
-              ❌ Payment failed or cancelled.<br>
-              <span class="text-gray-600 text-sm">You may retry using another method.</span>
-            `;
-            statusEl.className = "text-red-600 font-semibold mt-3";
-          }
-
-          btn.disabled = false;
-          btn.textContent = "Withdraw Now";
-        }
-      } catch (err) {
-        console.error("Verification error:", err);
-      }
-    }, 5000);
-  } catch (err) {
-    console.error(err);
-    statusEl.textContent = "⚠️ " + (err.message || "Network error. Please try again later.");
-    statusEl.className = "text-red-600 font-semibold mt-3";
-    btn.disabled = false;
-    btn.textContent = "Withdraw Now";
-  }
 }
     </script>
 </body>
