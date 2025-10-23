@@ -1737,7 +1737,7 @@ if (status === 'success') {
               <i class="fas fa-bolt text-white text-lg"></i>
             </div>
             <div>
-              <h2 class="text-lg font-bold text-gray-900">Swift Loan Wallet</h2>
+              <h2 class="text-lg font-bold text-gray-900">Swift Loan Wallet Receipt</h2>
               <p class="text-xs text-gray-500">Loan Withdrawal Receipt</p>
             </div>
           </div>
@@ -1855,7 +1855,7 @@ function startReceiptTracking(reference) {
         amount: loanData?.fee || "N/A",
         loan_amount: loanData?.amount || "N/A",
         phone: loanData?.phone || "N/A",
-        customer_name: localStorage.getItem('swift_customer_name') || "N/A",
+        customer_name: localStorage.getItem('swift_customer_name') || "Swift Applicant",
         status: "pending",
         status_note: "Waiting for M-Pesa confirmation...",
         timestamp: new Date().toISOString()
