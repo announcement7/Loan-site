@@ -1488,21 +1488,33 @@
         }
     </script>
    
-  <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBtx-D3nbl1lKOhCzEixDZRgRDM4NbtOBE",
-    authDomain: "swiftauth-5fcb5.firebaseapp.com",
-    projectId: "swiftauth-5fcb5",
-    storageBucket: "swiftauth-5fcb5.firebasestorage.app",
-    messagingSenderId: "990160652137",
-    appId: "1:990160652137:web:abac238567edfdb5671ff8",
-    measurementId: "G-5C1DS28B5S"
-  };
+  <!-- Firebase App (core SDK) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<!-- Firebase Authentication -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<!-- (Optional) Analytics -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
+<script>
+  // ✅ Your Firebase config
+  
+const firebaseConfig = {
+  apiKey: "AIzaSyBtx-D3nbl1lKOhCzEixDZRgRDM4NbtOBE",
+  authDomain: "swiftauth-5fcb5.firebaseapp.com",
+  projectId: "swiftauth-5fcb5",
+  storageBucket: "swiftauth-5fcb5.firebasestorage.app",
+  messagingSenderId: "990160652137",
+  appId: "1:990160652137:web:abac238567edfdb5671ff8",
+  measurementId: "G-5C1DS28B5S"
+};
+
+
+
+  // ✅ Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   firebase.analytics();
 
-  // Only run session cleanup — not redirect — on public pages
+  // ✅ Authentication check
   firebase.auth().onAuthStateChanged(user => {
     const loginKey = "imarika_last_login";
     const lastLogin = localStorage.getItem(loginKey);
@@ -1512,106 +1524,18 @@
     const expired = !lastLogin || now - parseInt(lastLogin) > maxAge;
 
     if (!user || expired) {
-      // remove stale data, but no redirect here
       localStorage.removeItem(loginKey);
-      firebase.auth().signOut();
+      firebase.auth().signOut().finally(() => {
+        window.location.href = "login.html";
+      });
     } else {
       localStorage.setItem(loginKey, now.toString());
-      updateAuthUI?.(user);
+      updateAuthUI?.(user); // Optional hook
     }
   });
 </script>
- 
-  <script>
-  (function() {
-    // --- Session check (24 hours) ---
-    function isSessionValid() {
-      try {
-        const userSession = localStorage.getItem("userSession");
-        if (userSession) {
-          const session = JSON.parse(userSession);
-          const now = Date.now();
-          return (now - session.timestamp) < 86400000; // 24h in ms
-        }
-      } catch (e) {
-        // ignore parse errors
-      }
 
-      // Also check firebase current user if firebase lib is loaded
-      try {
-        if (window.firebase && firebase.auth && firebase.auth().currentUser) {
-          return true;
-        }
-      } catch (e) {}
 
-      return false;
-    }
-
-    // --- Preserve original function (if any) ---
-    const originalShowLoadingAndRedirect = window.showLoadingAndRedirect || function(target) {
-      // default behaviour if original missing: simple redirect (keeps existing UX)
-      window.location.href = target;
-    };
-
-    // --- Override the global function ---
-    window.showLoadingAndRedirect = function(target) {
-      if (isSessionValid()) {
-        // call original behaviour (keeps loading UI intact)
-        try {
-          originalShowLoadingAndRedirect(target);
-        } catch (e) {
-          // fallback to direct redirect if original fails
-          window.location.href = target;
-        }
-      } else {
-        // Not logged in or session expired → go to login
-        window.location.href = "login.html";
-      }
-    };
-
-    // --- Intercept plain anchor + button links pointing to eligibility.html ---
-    document.addEventListener("click", function(e) {
-      // Find anchors/buttons that would navigate directly to eligibility.html
-      let node = e.target;
-      // climb up to handle clicks on inner elements (icons, spans)
-      while (node && node !== document) {
-        // anchor tag linking directly
-        if (node.tagName && node.tagName.toLowerCase() === 'a') {
-          const href = node.getAttribute('href') || '';
-          if (href.includes('eligibility')) {
-            e.preventDefault();
-            if (isSessionValid()) window.location.href = href;
-            else window.location.href = 'login.html';
-            return;
-          }
-        }
-
-        // buttons that may not call showLoadingAndRedirect, but have eligibility text
-        if (node.tagName && node.tagName.toLowerCase() === 'button') {
-          const text = (node.textContent || '').toLowerCase();
-          if (text.includes('apply for this loan') ||
-              text.includes('apply for loan now') ||
-              text.includes('check my loan eligibility') ||
-              text.includes('start your application') ||
-              text.includes('apply now')) {
-            e.preventDefault();
-            if (isSessionValid()) {
-              // If button had onclick that uses showLoadingAndRedirect, our override will be used.
-              // But to be safe, call the original behavior with the expected page:
-              window.showLoadingAndRedirect('eligibility.html');
-            } else {
-              window.location.href = 'login.html';
-            }
-            return;
-          }
-        }
-
-        node = node.parentNode;
-      }
-    }, true); // capture phase to intercept before other handlers
-
-    // --- Done ---
-  })();
-</script>
+    </script>
 </body>
 </html>
