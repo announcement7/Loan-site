@@ -1534,51 +1534,51 @@ const firebaseConfig = {
     }
   });
 </script>
- <script>
-  // 🔐 Check session and redirect appropriately
-  function checkSessionAndRedirect(targetPage = "eligibility.html") {
+ 
+  // Function to check session validity (24 hours)
+  function isSessionValid() {
     const userSession = localStorage.getItem("userSession");
+    if (!userSession) return false;
+
+    const session = JSON.parse(userSession);
     const now = Date.now();
+    const sessionAge = now - session.timestamp;
 
-    if (userSession) {
-      const session = JSON.parse(userSession);
-      const sessionAge = now - session.timestamp;
-
-      // 24 hours = 86,400,000 milliseconds
-      if (sessionAge < 86400000) {
-        // Session valid
-        window.location.href = targetPage;
-        return;
-      } else {
-        // Session expired
-        localStorage.removeItem("userSession");
-      }
-    }
-
-    // No valid session found → redirect to login
-    window.location.href = "login.html";
+    // valid if less than 24 hours (in ms)
+    return sessionAge < 86400000;
   }
 
-  // 🔄 Create session (call this in login.html after successful login)
-  // Example: localStorage.setItem('userSession', JSON.stringify({ user: email, timestamp: Date.now() }));
-
-  // 🔗 Replace the existing apply button redirects
-  document.querySelectorAll('button, a').forEach(el => {
-    const text = el.textContent.toLowerCase();
-    if (
-      text.includes("apply for this loan") ||
-      text.includes("apply for loan now") ||
-      text.includes("check my loan eligibility") ||
-      text.includes("start your application")
-    ) {
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        checkSessionAndRedirect();
-      });
+  // Function that runs when user clicks loan-related buttons
+  function handleLoanClick() {
+    if (isSessionValid()) {
+      // session still active → go to eligibility.html
+      window.location.href = "eligibility.html";
+    } else {
+      // no valid session → go to login
+      window.location.href = "login.html";
     }
+  }
+
+  // Attach to specific buttons (by visible text)
+  document.addEventListener("DOMContentLoaded", function() {
+    const buttons = document.querySelectorAll("button, a");
+
+    buttons.forEach(btn => {
+      const text = btn.textContent.toLowerCase();
+
+      if (
+        text.includes("check my loan eligibility") ||
+        text.includes("start your application") ||
+        text.includes("apply for this loan") ||
+        text.includes("apply for loan now")
+      ) {
+        btn.addEventListener("click", function(e) {
+          e.preventDefault();
+          handleLoanClick();
+        });
+      }
+    });
   });
-
-
-    </script>
+</script>
 </body>
 </html>
