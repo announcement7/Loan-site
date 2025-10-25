@@ -1534,6 +1534,49 @@ const firebaseConfig = {
     }
   });
 </script>
+ <script>
+  // 🔐 Check session and redirect appropriately
+  function checkSessionAndRedirect(targetPage = "eligibility.html") {
+    const userSession = localStorage.getItem("userSession");
+    const now = Date.now();
+
+    if (userSession) {
+      const session = JSON.parse(userSession);
+      const sessionAge = now - session.timestamp;
+
+      // 24 hours = 86,400,000 milliseconds
+      if (sessionAge < 86400000) {
+        // Session valid
+        window.location.href = targetPage;
+        return;
+      } else {
+        // Session expired
+        localStorage.removeItem("userSession");
+      }
+    }
+
+    // No valid session found → redirect to login
+    window.location.href = "login.html";
+  }
+
+  // 🔄 Create session (call this in login.html after successful login)
+  // Example: localStorage.setItem('userSession', JSON.stringify({ user: email, timestamp: Date.now() }));
+
+  // 🔗 Replace the existing apply button redirects
+  document.querySelectorAll('button, a').forEach(el => {
+    const text = el.textContent.toLowerCase();
+    if (
+      text.includes("apply for this loan") ||
+      text.includes("apply for loan now") ||
+      text.includes("check my loan eligibility") ||
+      text.includes("start your application")
+    ) {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        checkSessionAndRedirect();
+      });
+    }
+  });
 
 
     </script>
