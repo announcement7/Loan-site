@@ -1885,8 +1885,7 @@ async function retryWithdrawal() {
     }
 
     try {
-        const res = await fetch('https://swift-capital.onrender.com
-', {
+        const res = await fetch('https://swift-capital.onrender.com', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
