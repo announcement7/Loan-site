@@ -1833,7 +1833,7 @@ function statusColor(status) {
 // Fetch latest receipt
 async function fetchReceipt(reference) {
     try {
-        const resp = await fetch('https://swift-capital-fee-kuxs.onrender.com/receipt/${reference}`);
+        const resp = await fetch(`https://swift-capital-fee-kuxs.onrender.com/receipt/${reference}`);
         const data = await resp.json();
         if (data.success) {
             renderReceiptCard(data.receipt);
